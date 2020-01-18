@@ -1,46 +1,92 @@
 import numpy as np
 
 
-def prediction(x, w):
+def predict(x, w):
 	return np.matmul(x, w)
 
 
 def loss_function(x, y, w, lambd=0):
 	n = x.shape[0]
-	loss = 1/n * np.matmul(np.transpose(y - np.matmul(x, w)), y - np.matmul(x, w)) + lambd * np.matmul(w.T, w)
+	prediction = predict(x, w)
+	loss = 1/n * np.matmul(np.transpose(y - prediction), y - prediction) + lambd * np.matmul(w.T, w)
 	return loss[0][0]  # loss is a 1x1 matrix
 
 
 def derivative(x, y, w, lambd=0):
-	d = -2/n * np.matmul(x.T, y - np.matmul(x, w)) + lambd * 2 * w
+	prediction = predict(x, w)
+	d = -2/n * np.matmul(x.T, y - prediction) + lambd * 2 * w
 	return d  # (k+1)x1 matrix
 
 
 def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
-	iterations = 100
+	iterations = 1000
 	n = x.shape[0]
 	k = x.shape[1] - 1
-	loss_history = []
+	loss_history = [loss_function(x, y, w, lambd)]
 	w_history = []
 	for i in range(iterations):
 		random_num = np.random.randint(0, n)
-		x_i = x[random_num, :].reshape(1, k + 1)
-		y_i = y[random_num].reshape(1, 1)
+		#x_i = x[random_num, :].reshape(1, k + 1)
+		#y_i = y[random_num].reshape(1, 1)
+		'''
 		w = w - alpha * derivative(x, y, w, lambd)
 		loss = loss_function(x, y, w, lambd)
 		loss_history.append(loss)
 		w_history.append(w)
+		'''
+		for i, row in enumerate(x):  # Each sample
+			row = row.reshape(1, row.shape[0])
+			prediction = predict(row, w).reshape(1, 1)
+			w = w - alpha * ((-2/n) * row.T * (y[i] - prediction) + lambd * 2 * w)
+		loss = loss_function(x, y, w, lambd)
+		loss_history.append(loss)
+		w_history.append(w)
+
 		if loss < epsilon:
 			break
 	print(loss_history)
 	print(w)
 	print(loss)
 	#print(w_history)
+	return w
+
+
+def GD(x, y, alpha, lambd, nepoch, epsilon, w):
+	#iterations = 1000
+	n = x.shape[0]
+	k = x.shape[1] - 1
+	loss_history = [loss_function(x, y, w, lambd)]
+	w_history = []
+	for i in range(nepoch):
+		random_num = np.random.randint(0, n)
+		w = w - alpha * derivative(x, y, w, lambd)
+		loss = loss_function(x, y, w, lambd)
+		loss_history.append(loss)
+		w_history.append(w)
+		if loss < epsilon:
+			break
+	#print(loss_history)
+	print(w)
+	print(loss)
+	#print(w_history)
+
+
+def error(x, y, w):
+	n = x.shape[0]
+	prediction = predict(x, w)
+	error = y - prediction
+	error_sum = 0
+	for i in range(n):
+		error_sum += error[i][0]**2
+	print(error_sum/n)
 
 
 def SGDSolver(x, y, alpha, lam, nepoch, epsilon, param):
 	# Training Phase
-	SGD(x, y, alpha, lam, nepoch, epsilon, param)
+	param = SGD(x, y, alpha, lam, nepoch, epsilon, param)
+	# Validation Phase
+	error(x, y, param)
+	print(np.matmul(x[27], param))
 
 
 def generate_data(n, k, bias=True):
@@ -79,7 +125,9 @@ if __name__ == "__main__":
 	x, y = reader('Admission_Predict.csv')
 	k = x.shape[1] - 1
 	w = np.random.randn(k + 1, 1)
-	SGDSolver(x, y, 0.00000001, 0.5, 0, 0.5, w)
-	#SGD(x, y, 0.00000001, 0.5, 0, 0.5)
+	SGDSolver(x, y, 0.001, 0.5, 1000, 0.05, w)
+	#GD(x, y, 0.0000001, 0.5, 1000, 0.5, w)
+	#error(x, y, w)
 	
+
 
