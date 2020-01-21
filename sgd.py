@@ -82,6 +82,8 @@ def error(x, y, w):
 
 
 def SGDSolver(x, y, alpha, lam, nepoch, epsilon, param):
+	n = x.shape[0]
+	x = np.hstack((np.array([1] * n)[:, np.newaxis], x))  # Add a column of 1s
 	# Training Phase
 	param = SGD(x, y, alpha, lam, nepoch, epsilon, param)
 	# Validation Phase
@@ -122,12 +124,11 @@ if __name__ == "__main__":
 	n = 10
 	k = 1
 	# x, y = generate_data(n, k)
-	x, y = reader('Admission_Predict.csv')
-	k = x.shape[1] - 1
+	x, y = reader('Admission_Predict.csv', bias=False)
+	k = x.shape[1]
 	w = np.random.randn(k + 1, 1)
 	SGDSolver(x, y, 0.001, 0.5, 1000, 0.05, w)
 	#GD(x, y, 0.0000001, 0.5, 1000, 0.5, w)
 	#error(x, y, w)
 	
-
-
+# Falta: gridsearch for hyperparameters, 
