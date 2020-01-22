@@ -26,6 +26,10 @@ def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
 	w_history = []
 	for i in range(iterations):
 		random_num = np.random.randint(0, n)
+		data = np.append(x, y, axis=1)
+		np.random.shuffle(data)
+		x = data[:,:k+1]
+		y = data[:,k+1:]
 		#x_i = x[random_num, :].reshape(1, k + 1)
 		#y_i = y[random_num].reshape(1, 1)
 		'''
@@ -46,6 +50,7 @@ def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
 			break
 	#print(loss_history)
 	#print(w)
+	#print(w_history)
 	print('FINAL LOSS: ', loss)
 
 	return w, loss
@@ -83,8 +88,14 @@ def error(x, y, w):
 
 def SGDSolver(x, y, alpha, lam, nepoch, epsilon, param):
 	n = x.shape[0]
+	x = normalize(x)
 	x = np.hstack((np.array([1] * n)[:, np.newaxis], x))  # Add a column of 1s
 	# Training Phase
+	#w, loss = SGD(x, y, 0.01, 0.00001, 1000, epsilon, param)
+	#print(loss)
+	#print(w)
+	#print(np.matmul(x[27], w))
+	
 	min_loss = 10**10
 	best_param = param
 	for lr in np.arange(alpha[0], alpha[1], (alpha[1] - alpha[0]) / 5.0):
@@ -99,12 +110,25 @@ def SGDSolver(x, y, alpha, lam, nepoch, epsilon, param):
 				best_lr = lr
 				best_lam = regularization_weight
 	print('Min LOSS', min_loss, 'Best LR', best_lr, 'Best Lambda', best_lam)
-	print(np.matmul(x[27], best_param))
+	print(np.matmul(x[:28], best_param))
 	return
 	param = SGD(x, y, alpha, lam, nepoch, epsilon, param)
 	# Validation Phase
 	error(x, y, param)
 	print(np.matmul(x[27], param))
+
+
+def normalize(x):
+	n = x.shape[0]
+	k = x.shape[1]
+	for i in range(k):
+		feature = x[:, i]
+		min_x = min(feature)
+		max_x = max(feature)
+		feature = (feature - min_x) / (max_x - min_x)
+		feature = feature - np.mean(feature)
+		x[:, i] = feature
+	return x
 
 
 def generate_data(n, k, bias=True):
@@ -143,8 +167,9 @@ if __name__ == "__main__":
 	x, y = reader('Admission_Predict.csv', bias=False)
 	k = x.shape[1]
 	w = np.random.randn(k + 1, 1)
+	#w = np.array([1] * (k + 1)).reshape(k+1, 1)
 	# best lr before=0.001, best lr now=0.0001-0.0002
-	SGDSolver(x, y, [0.0001, 0.0003], [0.02, 0.08], 1000, 0.01, w)
+	SGDSolver(x, y, [0.01, 0.1], [0.00005, 0.0001], 1000, 0.005, w)  # error was 0.01
 	#a = np.load('Admission_Predict.npy')
 	#print(a)
 	#GD(x, y, 0.0000001, 0.5, 1000, 0.5, w)
