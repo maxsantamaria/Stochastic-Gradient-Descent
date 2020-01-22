@@ -44,11 +44,11 @@ def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
 
 		if loss < epsilon:
 			break
-	print(loss_history)
-	print(w)
-	print(loss)
-	#print(w_history)
-	return w
+	#print(loss_history)
+	#print(w)
+	print('FINAL LOSS: ', loss)
+
+	return w, loss
 
 
 def GD(x, y, alpha, lambd, nepoch, epsilon, w):
@@ -67,7 +67,7 @@ def GD(x, y, alpha, lambd, nepoch, epsilon, w):
 			break
 	#print(loss_history)
 	print(w)
-	print(loss)
+	print('FINAL LOSS: ', loss)
 	#print(w_history)
 
 
@@ -85,6 +85,22 @@ def SGDSolver(x, y, alpha, lam, nepoch, epsilon, param):
 	n = x.shape[0]
 	x = np.hstack((np.array([1] * n)[:, np.newaxis], x))  # Add a column of 1s
 	# Training Phase
+	min_loss = 10**10
+	best_param = param
+	for lr in np.arange(alpha[0], alpha[1], (alpha[1] - alpha[0]) / 5.0):
+		print('\nNEW LEARNING RATE ', lr)
+	#lr = 0.0002
+		for regularization_weight in np.arange(lam[0], lam[1], (lam[1] - lam[0]) / 5.0):
+			print('\tNEW LAMBDA ', regularization_weight)
+			w, loss = SGD(x, y, lr, regularization_weight, nepoch, epsilon, param)
+			if loss < min_loss:
+				min_loss = loss
+				best_param = w
+				best_lr = lr
+				best_lam = regularization_weight
+	print('Min LOSS', min_loss, 'Best LR', best_lr, 'Best Lambda', best_lam)
+	print(np.matmul(x[27], best_param))
+	return
 	param = SGD(x, y, alpha, lam, nepoch, epsilon, param)
 	# Validation Phase
 	error(x, y, param)
@@ -127,8 +143,11 @@ if __name__ == "__main__":
 	x, y = reader('Admission_Predict.csv', bias=False)
 	k = x.shape[1]
 	w = np.random.randn(k + 1, 1)
-	SGDSolver(x, y, 0.001, 0.5, 1000, 0.05, w)
+	# best lr before=0.001, best lr now=0.0001-0.0002
+	SGDSolver(x, y, [0.0001, 0.0003], [0.02, 0.08], 1000, 0.01, w)
+	#a = np.load('Admission_Predict.npy')
+	#print(a)
 	#GD(x, y, 0.0000001, 0.5, 1000, 0.5, w)
 	#error(x, y, w)
 	
-# Falta: gridsearch for hyperparameters, 
+# Falta: gridsearch for hyperparameters (range), read params from command line, different phases 
